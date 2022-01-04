@@ -16,17 +16,13 @@ public class Main
 
     public static void main(String[] args) throws TelegramApiException, IOException
     {
-        System.out.printf("Arguments size: %d.\n", args.length);
-        System.out.printf("botUsername = '%s'\n", System.getProperty("botUsername", "NO PROPERTY"));
-        System.out.printf("botUsername = '%s'\n", System.getenv("botUsername"));
-        if (args.length < 2)
+        final String botUsername = System.getenv("botUsername");
+        final String botToken = System.getenv("botToken");
+        if (botUsername == null || botToken == null)
         {
-            for (String arg : args)
-                System.out.println(arg);
-            throw new RuntimeException("No arguments");
+            throw new RuntimeException("botUsername or botToken is null.");
         }
-
-        startBot(args[0], args[1]);
+        startBot(botUsername, botToken);
     }
 
     private static void startBot(final String botUsername, final String botToken) throws TelegramApiException, IOException
