@@ -1,13 +1,17 @@
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 
+import org.apache.http.HttpServerConnection;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+
+import com.sun.net.httpserver.HttpServer;
 
 /**
  *
@@ -15,8 +19,6 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 public class Main
 {
     public static final Path OUTPUT_DIR = Path.of("output");
-
-    private static final Socket socket = new Socket();
 
     public static void main(String[] args) throws TelegramApiException, IOException
     {
@@ -27,17 +29,7 @@ public class Main
             throw new RuntimeException("botUsername or botToken is null.");
         }
         startBot(botUsername, botToken);
-
-        final int port = Integer.parseInt(System.getenv("PORT"));
-        System.out.printf("Start http server on port %d.\n", port);
-        try
-        {
-            socket.bind(new InetSocketAddress(port));
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+        startHttpServer();
     }
 
     private static void startBot(final String botUsername, final String botToken) throws TelegramApiException, IOException
@@ -69,6 +61,22 @@ public class Main
                         .forEach(Main::recursiveDeleteDirectory);
             }
             Files.delete(path);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private static void startHttpServer()
+    {
+        final int port = Integer.parseInt(System.getenv("PORT"));
+        final HttpServer httpServer;
+        try
+        {
+            httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+            httpServer.start();
+            System.out.printf("Http server start on port %d.\n", port);
         }
         catch (IOException e)
         {
