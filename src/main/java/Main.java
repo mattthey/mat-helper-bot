@@ -18,6 +18,7 @@ public class Main
     {
         if (args.length < 2)
         {
+            System.out.println("No arguments");
             throw new RuntimeException("No arguments");
         }
 
