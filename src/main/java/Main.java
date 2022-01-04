@@ -16,6 +16,8 @@ public class Main
 {
     public static final Path OUTPUT_DIR = Path.of("output");
 
+    private static final Socket socket = new Socket();
+
     public static void main(String[] args) throws TelegramApiException, IOException
     {
         final String botUsername = System.getenv("botUsername");
@@ -28,7 +30,6 @@ public class Main
 
         final int port = Integer.parseInt(System.getenv("PORT"));
         System.out.printf("Start http server on port %d.\n", port);
-        final Socket socket = new Socket();
         try
         {
             socket.bind(new InetSocketAddress(port));
@@ -37,7 +38,6 @@ public class Main
         {
             e.printStackTrace();
         }
-
     }
 
     private static void startBot(final String botUsername, final String botToken) throws TelegramApiException, IOException
