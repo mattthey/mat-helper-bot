@@ -16,9 +16,12 @@ public class Main
 
     public static void main(String[] args) throws TelegramApiException, IOException
     {
+        System.out.printf("Arguments size: %d.\n", args.length);
+        System.out.printf("botUsername = '%s'\n", System.getProperty("botUsername", "NO PROPERTY"));
         if (args.length < 2)
         {
-            System.out.println("No arguments");
+            for (String arg : args)
+                System.out.println(arg);
             throw new RuntimeException("No arguments");
         }
 
