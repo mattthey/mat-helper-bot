@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -23,6 +25,7 @@ public class Main
             throw new RuntimeException("botUsername or botToken is null.");
         }
         startBot(botUsername, botToken);
+        startHttpServer();
     }
 
     private static void startBot(final String botUsername, final String botToken) throws TelegramApiException, IOException
@@ -54,6 +57,21 @@ public class Main
                         .forEach(Main::recursiveDeleteDirectory);
             }
             Files.delete(path);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private static void startHttpServer()
+    {
+        final int port = Integer.parseInt(System.getenv("PORT"));
+        System.out.printf("Start http server on port %d.\n", port);
+        final Socket socket = new Socket();
+        try
+        {
+            socket.bind(new InetSocketAddress(port));
         }
         catch (IOException e)
         {
