@@ -18,6 +18,7 @@ public class Main
     {
         System.out.printf("Arguments size: %d.\n", args.length);
         System.out.printf("botUsername = '%s'\n", System.getProperty("botUsername", "NO PROPERTY"));
+        System.out.printf("botUsername = '%s'\n", System.getenv("botUsername"));
         if (args.length < 2)
         {
             for (String arg : args)
