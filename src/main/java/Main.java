@@ -77,7 +77,7 @@ public class Main
             httpServer.createContext("/", exchange ->
             {
                 System.out.println("Update date " + new Date());
-                String response = "Телеграм бот для скачивания книг с сайта knigavuhe.org.";
+                String response = "Telegram bot for downloading books from knigavuhe.org.";
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
                 os.write(response.getBytes());
