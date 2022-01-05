@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Date;
 
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -75,6 +76,7 @@ public class Main
             httpServer = HttpServer.create(new InetSocketAddress(port), 0);
             httpServer.createContext("/", exchange ->
             {
+                System.out.println("Update date " + new Date());
                 String response = "Телеграм бот для скачивания книг с сайта knigavuhe.org.";
                 exchange.sendResponseHeaders(200, response.length());
                 OutputStream os = exchange.getResponseBody();
