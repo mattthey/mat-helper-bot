@@ -1,12 +1,10 @@
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 
-import org.apache.http.HttpServerConnection;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
@@ -75,6 +73,14 @@ public class Main
         try
         {
             httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+            httpServer.createContext("/", exchange ->
+            {
+                String response = "Телеграм бот для скачивания книг с сайта knigavuhe.org.";
+                exchange.sendResponseHeaders(200, response.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            });
             httpServer.start();
             System.out.printf("Http server start on port %d.\n", port);
         }
