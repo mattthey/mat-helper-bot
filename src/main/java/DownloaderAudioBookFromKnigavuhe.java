@@ -94,12 +94,14 @@ public class DownloaderAudioBookFromKnigavuhe
             final HttpResponse<Path> response = HTTP_CLIENT.send(request, BodyHandlers.ofFile(file));
             if (response.statusCode() != 200)
             {
+                System.out.printf("Error send request, status code %d.", response.statusCode());
                 throw new RuntimeException(request.toString());
             }
             return response.body().toFile();
         }
         catch (IOException | InterruptedException e)
         {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
