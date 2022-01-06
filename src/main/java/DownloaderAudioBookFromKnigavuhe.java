@@ -87,8 +87,11 @@ public class DownloaderAudioBookFromKnigavuhe
 
     public static File downloadPart(final String uri, final String bookTitle)
     {
+        System.out.println("downloadPart " + bookTitle);
         final Path file = Main.OUTPUT_DIR.resolve(bookTitle);
+        System.out.println("file " + file);
         final HttpRequest request = HttpRequest.newBuilder(URI.create(uri)).build();
+        System.out.println("request " + request);
         try
         {
             System.out.println("Start send request");
