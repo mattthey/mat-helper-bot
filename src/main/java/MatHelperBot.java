@@ -143,10 +143,12 @@ public class MatHelperBot extends TelegramLongPollingBot
             }
             else if (callData.contains("knigavuhe"))
             {
-                final String bookTitle = update.getCallbackQuery().getMessage().getEntities().get(0).getText();
+                final Message message = update.getCallbackQuery().getMessage();
+                final String bookTitle = message.getEntities().get(0).getText();
+                System.out.printf("Start send %s for user %s.\n", bookTitle, message.getChat().getUserName());
                 final File file = DownloaderAudioBookFromKnigavuhe.downloadPart(callData, bookTitle);
                 sendAudioFile(file, Long.toString(chatId));
-                file.delete();
+                System.out.printf("End send %s for user %s.\n", bookTitle, message.getChat().getUserName());
             }
         }
     }
