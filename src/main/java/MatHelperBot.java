@@ -145,10 +145,19 @@ public class MatHelperBot extends TelegramLongPollingBot
             {
                 final Message message = update.getCallbackQuery().getMessage();
                 final String bookTitle = message.getEntities().get(0).getText();
-                System.out.printf("Start send %s for user %s.\n", bookTitle, message.getChat().getUserName());
+                long start = System.currentTimeMillis();
+
+                System.out.printf("Start download %s for user %s.\n", bookTitle, message.getChat().getUserName());
                 final File file = DownloaderAudioBookFromKnigavuhe.downloadPart(callData, bookTitle);
+                long end = System.currentTimeMillis();
+
+                System.out.printf("Start send %s for user %s. %d ms\n", bookTitle, message.getChat().getUserName(),
+                        end - start);
+
                 sendAudioFile(file, Long.toString(chatId));
-                System.out.printf("End send %s for user %s.\n", bookTitle, message.getChat().getUserName());
+
+                System.out.printf("End send %s for user %s. %d ms\n", bookTitle, message.getChat().getUserName(),
+                        end - start);
             }
         }
     }
@@ -267,6 +276,7 @@ public class MatHelperBot extends TelegramLongPollingBot
         }
         catch (IOException e)
         {
+            System.out.println(e);
             e.printStackTrace();
             return List.of();
         }
