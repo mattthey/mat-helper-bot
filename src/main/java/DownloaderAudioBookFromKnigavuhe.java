@@ -24,28 +24,28 @@ public class DownloaderAudioBookFromKnigavuhe
     private static final Pattern MP3_URL_PATTERN = Pattern.compile("https.+?\\.mp3");
     private static final Pattern BACKSLASH = Pattern.compile("\\\\");
 
-    public static void downloadAudionBook(String uri) throws IOException, InterruptedException
-    {
-        final Document document = Jsoup.connect(uri).get();
-
-        final String title = getTitle(document);
-        final String author = getAuthor(document);
-        System.out.printf("Download %s - %s\n", author, title);
-
-        final List<String> trackUrls = getTrackUrls(document);
-
-        final int size = trackUrls.size();
-        for (int i = 0; i < size; i++)
-        {
-            final String newUrl = BACKSLASH.matcher(trackUrls.get(i)).replaceAll("");
-            final HttpRequest request = HttpRequest.newBuilder(URI.create(newUrl)).build();
-
-            final Path path = Main.OUTPUT_DIR.resolve(author + " - " + title + " - " + (i + 1) + ".mp3");
-            HTTP_CLIENT.send(request, BodyHandlers.ofFile(path));
-
-            System.out.printf("Download complete [%d/%d]\n", i + 1, size);
-        }
-    }
+//    public static void downloadAudionBook(String uri) throws IOException, InterruptedException
+//    {
+//        final Document document = Jsoup.connect(uri).get();
+//
+//        final String title = getTitle(document);
+//        final String author = getAuthor(document);
+//        System.out.printf("Download %s - %s\n", author, title);
+//
+//        final List<String> trackUrls = getTrackUrls(document);
+//
+//        final int size = trackUrls.size();
+//        for (int i = 0; i < size; i++)
+//        {
+//            final String newUrl = BACKSLASH.matcher(trackUrls.get(i)).replaceAll("");
+//            final HttpRequest request = HttpRequest.newBuilder(URI.create(newUrl)).build();
+//
+//            final Path path = Main.OUTPUT_DIR.resolve(author + " - " + title + " - " + (i + 1) + ".mp3");
+//            HTTP_CLIENT.send(request, BodyHandlers.ofFile(path));
+//
+//            System.out.printf("Download complete [%d/%d]\n", i + 1, size);
+//        }
+//    }
 
     public static String getTitle(Document document)
     {
@@ -85,9 +85,9 @@ public class DownloaderAudioBookFromKnigavuhe
                 .toList();
     }
 
-    public static File downloadPart(final String uri)
+    public static File downloadPart(final String uri, final String bookTitle)
     {
-        final Path file = Main.OUTPUT_DIR.resolve(Long.toString(System.currentTimeMillis()));
+        final Path file = Main.OUTPUT_DIR.resolve(bookTitle);
         final HttpRequest request = HttpRequest.newBuilder(URI.create(uri)).build();
         try
         {

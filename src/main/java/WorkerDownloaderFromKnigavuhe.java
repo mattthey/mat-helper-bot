@@ -8,9 +8,7 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -53,6 +51,7 @@ public class WorkerDownloaderFromKnigavuhe implements Runnable
             }
             catch (IOException e)
             {
+                e.printStackTrace();
                 sendErrorMessage(e);
                 return;
             }
@@ -65,9 +64,8 @@ public class WorkerDownloaderFromKnigavuhe implements Runnable
 
             final List<String> trackUrls = DownloaderAudioBookFromKnigavuhe.getTrackUrls(document);
             final JSONObject json = getJson(trackUrls);
-//            System.out.println(json);
 
-            final SendMessage sendMessage = prepare(fullTitle, json, chatId, uri);
+            final SendMessage sendMessage = getMessageWithMenuForSelectPartsAudioBook(fullTitle, json, chatId, uri);
 
             try
             {
@@ -86,8 +84,6 @@ public class WorkerDownloaderFromKnigavuhe implements Runnable
 
     private void sendErrorMessage(Throwable cause)
     {
-        cause.printStackTrace();
-
         final SendMessage sendMessage = new SendMessage();
         sendMessage.setText(cause.getMessage());
         sendMessage.setChatId(chatId);
@@ -112,8 +108,8 @@ public class WorkerDownloaderFromKnigavuhe implements Runnable
         return jsonObject;
     }
 
-    public static SendMessage prepare(String fullTitle, JSONObject jsonObject, String chatId,
-            String uri)
+    private static SendMessage getMessageWithMenuForSelectPartsAudioBook(
+            final String fullTitle, final JSONObject jsonObject, final String chatId, final String uri)
     {
         final SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);

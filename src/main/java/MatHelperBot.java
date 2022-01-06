@@ -1,9 +1,12 @@
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
@@ -25,8 +28,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
  */
 public class MatHelperBot extends TelegramLongPollingBot
 {
-    private static final String update_msg_text = "1".repeat(64);
     private static final PrintWriter OUT = new PrintWriter(System.out);
+    // максимальный размер файла, который может отправить тг 50mb в байтах
+    private static final int MAX_SIZE_AUDIO_FILE_TG = 50 * 1024 * 1024;
 
     private final String botUsername;
     private final String botToken;
@@ -60,7 +64,7 @@ public class MatHelperBot extends TelegramLongPollingBot
 
             if (!text.contains("knigavuhe"))
             {
-                mainMenu(update);
+                printHelp(update);
                 return;
             }
 
@@ -75,23 +79,7 @@ public class MatHelperBot extends TelegramLongPollingBot
             int messageId = update.getCallbackQuery().getMessage().getMessageId();
             long chatId = update.getCallbackQuery().getMessage().getChatId();
 
-            if (callData.equals(update_msg_text))
-            {
-                String answer = "Updated message text";
-                EditMessageText newMessage = new EditMessageText();
-                newMessage.setChatId(Long.toString(chatId));
-                newMessage.setMessageId(Math.toIntExact(messageId));
-                newMessage.setText(answer);
-                try
-                {
-                    execute(newMessage);
-                }
-                catch (TelegramApiException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-            else if (callData.startsWith("navigation"))
+            if (callData.startsWith("navigation"))
             {
                 final Message message = update.getCallbackQuery().getMessage();
                 final MessageEntity fullTitle = message.getEntities().get(0);
@@ -107,7 +95,6 @@ public class MatHelperBot extends TelegramLongPollingBot
 
                     json.put("idx", newCurrentIdx);
 
-                    // ----
                     final EditMessageText editMessageText = new EditMessageText();
                     editMessageText.setMessageId(messageId);
 
@@ -146,8 +133,6 @@ public class MatHelperBot extends TelegramLongPollingBot
                     inlineKeyboardMarkup.setKeyboard(rowsInline);
                     // добавляем кнопки к сообщению
                     editMessageText.setReplyMarkup(inlineKeyboardMarkup);
-                    // ----
-
 
                     execute(editMessageText);
                 }
@@ -158,34 +143,26 @@ public class MatHelperBot extends TelegramLongPollingBot
             }
             else if (callData.contains("knigavuhe"))
             {
-                final File file = DownloaderAudioBookFromKnigavuhe.downloadPart(callData);
+                final String bookTitle = update.getCallbackQuery().getMessage().getEntities().get(0).getText();
+                final File file = DownloaderAudioBookFromKnigavuhe.downloadPart(callData, bookTitle);
                 sendAudioFile(file, Long.toString(chatId));
                 file.delete();
             }
         }
     }
 
-    private void mainMenu(final Update update)
+    private void printHelp(final Update update)
     {
-        final String text = update.getMessage().getText();
         final String chatId = Long.toString(update.getMessage().getChatId());
 
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
-        message.setText("You send /start");
-        InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
-        List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        final InlineKeyboardButton inlineKeyboardButton = new InlineKeyboardButton();
-        inlineKeyboardButton.setText("Update message text");
-        inlineKeyboardButton.setCallbackData(update_msg_text);
-        rowInline.add(inlineKeyboardButton);
-        // Set the keyboard to the markup
-        rowsInline.add(rowInline);
-        // Add it to the message
-        markupInline.setKeyboard(rowsInline);
-        message.setReplyMarkup(markupInline);
-
+        message.setText("""
+                Бот для скачивания аудиокниг с сайта knigavuhe.org. Отправьте ему ссылку, например
+                https://knigavuhe.org/book/garri-potter-i-uznik-azkabana/
+                И бот скинет вам список глав, вы можете выбрать любую часть.
+                Внимание! Бот находится в стадии разработки, так что возможны некоторые ошибки. Прошу сообщать.
+                """);
         try
         {
             execute(message);
@@ -198,16 +175,109 @@ public class MatHelperBot extends TelegramLongPollingBot
 
     private void sendAudioFile(final File audioFile, final String chatId)
     {
+        final List<File> files = splitMp3File(audioFile);
+
         final SendAudio sendAudio = new SendAudio();
         sendAudio.setChatId(chatId);
-        sendAudio.setAudio(new InputFile(audioFile));
+
+        if (files.size() > 1)
+        {
+            sendMessage("Телеграм имеет ограничения для отправки аудиофайлов больше 50mb. Так что книга будет "
+                    + "отправлена по частям Всего файлов " + files.size(), chatId);
+        }
+        for (final File file : files)
+        {
+            sendAudio.setAudio(new InputFile(file));
+            try
+            {
+                execute(sendAudio);
+            }
+            catch (TelegramApiException e)
+            {
+                e.printStackTrace();
+            }
+            System.out.printf("Delete file %s - %b.\n", file.getPath(), file.delete());
+        }
+    }
+
+    private void sendMessage(final String msg, final String chatId)
+    {
+        final SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(msg);
         try
         {
-            execute(sendAudio);
+            execute(sendMessage);
         }
         catch (TelegramApiException e)
         {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
+    }
+
+    private static List<File> splitMp3File(final File fileToSplit)
+    {
+        final long fileSizeInBits = fileToSplit.length();
+
+        if (fileSizeInBits < MAX_SIZE_AUDIO_FILE_TG)
+        {
+            System.out.printf("File size = %d bytes it lower max size for audio file in telegram %d bytes (50mb).\n",
+                    fileSizeInBits, MAX_SIZE_AUDIO_FILE_TG);
+            return List.of(fileToSplit);
+        }
+        // колличество частей на которые будем резать mp3 файл
+        final long countSplit;
+        if (fileSizeInBits % MAX_SIZE_AUDIO_FILE_TG == 0)
+        {
+            countSplit = fileSizeInBits / MAX_SIZE_AUDIO_FILE_TG;
+        }
+        else
+        {
+            countSplit = fileSizeInBits / MAX_SIZE_AUDIO_FILE_TG + 1;
+        }
+
+        final long sizeOnePart = fileSizeInBits / countSplit;
+        List<File> newFiles = new ArrayList<>();
+
+
+        int maxReadBufferSize = 8 * 1024; //8KB
+        try (final BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(fileToSplit)))
+        {
+            for (long part = 0; part < countSplit; part++)
+            {
+                final File newFile = Main.OUTPUT_DIR.resolve(
+                        fileToSplit.getName().split("\\.")[0] + part + ".mp3").toFile();
+                try (final BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(newFile)))
+                {
+                    final int numReads = (int)(sizeOnePart / maxReadBufferSize);
+                    final int numRemainingRead = (int)(sizeOnePart % maxReadBufferSize);
+                    for (int i = 0; i < numReads; i++)
+                    {
+                        readWrite(bufferedInputStream, bufferedOutputStream, maxReadBufferSize);
+                    }
+                    if (numRemainingRead > 0)
+                    {
+                        readWrite(bufferedInputStream, bufferedOutputStream, numRemainingRead);
+                    }
+                }
+                newFiles.add(newFile);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            return List.of();
+        }
+        return newFiles;
+    }
+
+    private static void readWrite(BufferedInputStream raf, BufferedOutputStream bw, int numBytes) throws IOException
+    {
+        byte[] buf = new byte[numBytes];
+        int val = raf.read(buf);
+        if(val != -1)
+        {
+            bw.write(buf);
         }
     }
 }
