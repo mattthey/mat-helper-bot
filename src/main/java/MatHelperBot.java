@@ -148,11 +148,11 @@ public class MatHelperBot extends TelegramLongPollingBot
                 long start = System.currentTimeMillis();
 
                 System.out.printf("Start download %s for user %s.\n", bookTitle, message.getChat().getUserName());
-                final File file = DownloaderAudioBookFromKnigavuhe.downloadPart(callData, bookTitle);
+                final File file = DownloaderAudioBookFromKnigavuhe.downloadPart(callData);
                 long end = System.currentTimeMillis();
 
-                System.out.printf("Start send %s for user %s. %d ms\n", bookTitle, message.getChat().getUserName(),
-                        end - start);
+                System.out.printf("Download complete %d ms. Start send %s for user %s.\n", end - start,
+                        bookTitle, message.getChat().getUserName());
 
                 sendAudioFile(file, Long.toString(chatId));
 

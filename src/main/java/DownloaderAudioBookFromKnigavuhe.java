@@ -85,18 +85,17 @@ public class DownloaderAudioBookFromKnigavuhe
                 .toList();
     }
 
-    public static File downloadPart(final String uri, final String bookTitle)
+    public static File downloadPart(final String uri)
     {
-        System.out.println("downloadPart " + bookTitle);
-        final Path file = Main.OUTPUT_DIR.resolve(bookTitle);
-        System.out.println("file " + file);
+        final Path file = Main.OUTPUT_DIR.resolve(Long.toString(System.nanoTime()));
         final HttpRequest request = HttpRequest.newBuilder(URI.create(uri)).build();
-        System.out.println("request " + request);
         try
         {
+            final long start = System.currentTimeMillis();
             System.out.println("Start send request");
             final HttpResponse<Path> response = HTTP_CLIENT.send(request, BodyHandlers.ofFile(file));
-            System.out.printf("End send request status code %d.\n", response.statusCode());
+            final long end = System.currentTimeMillis();
+            System.out.printf("End send request status code %d. %d ms\n", response.statusCode(), end - start);
             if (response.statusCode() != 200)
             {
                 System.out.printf("Error send request, status code %d.\n", response.statusCode());
