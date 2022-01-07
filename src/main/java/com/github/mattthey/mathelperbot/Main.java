@@ -1,3 +1,5 @@
+package com.github.mattthey.mathelperbot;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -13,10 +15,16 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- *
+ * Точка входа
  */
 public class Main
 {
+    private static final String BOT_DESCRIPTION = """
+            A bot for downloading audiobooks from knigavuhe.org. Send him a link, for example
+            https://knigavuhe.org/book/garri-potter-i-uznik-azkabana/
+            And the bot will drop you a list of chapters, you can choose any part.
+            Attention! The bot is under development, so some bugs are possible. Please let me know.
+            """;
     public static final Path OUTPUT_DIR = Path.of("output");
 
     public static void main(String[] args) throws TelegramApiException, IOException
@@ -33,20 +41,20 @@ public class Main
 
     private static void startBot(final String botUsername, final String botToken) throws TelegramApiException, IOException
     {
-        prepare();
+        prepareOutputDirectory();
 
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
         final MatHelperBot matHelperBot = new MatHelperBot(botUsername, botToken);
         telegramBotsApi.registerBot(matHelperBot);
     }
 
-    private static void prepare() throws IOException
+    private static void prepareOutputDirectory() throws IOException
     {
         recursiveDeleteDirectory(OUTPUT_DIR);
         Files.createDirectory(OUTPUT_DIR);
     }
 
-    public static void recursiveDeleteDirectory(Path path)
+    private static void recursiveDeleteDirectory(Path path)
     {
         if (!Files.exists(path))
         {
@@ -67,6 +75,9 @@ public class Main
         }
     }
 
+    /**
+     * Для деплоя на heroku это необходимо.
+     */
     private static void startHttpServer()
     {
         final int port = Integer.parseInt(System.getenv("PORT"));
@@ -77,10 +88,9 @@ public class Main
             httpServer.createContext("/", exchange ->
             {
                 System.out.println("Update date " + new Date());
-                String response = "Telegram bot for downloading books from knigavuhe.org.";
-                exchange.sendResponseHeaders(200, response.length());
+                exchange.sendResponseHeaders(200, BOT_DESCRIPTION.length());
                 OutputStream os = exchange.getResponseBody();
-                os.write(response.getBytes());
+                os.write(BOT_DESCRIPTION.getBytes());
                 os.close();
             });
             httpServer.start();

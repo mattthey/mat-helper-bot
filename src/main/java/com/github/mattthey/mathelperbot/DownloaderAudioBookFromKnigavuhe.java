@@ -1,3 +1,5 @@
+package com.github.mattthey.mathelperbot;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -16,7 +18,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 /**
- *
+ * Утилитарный класс для взаимодействия с сайтом
  */
 public class DownloaderAudioBookFromKnigavuhe
 {
@@ -24,52 +26,7 @@ public class DownloaderAudioBookFromKnigavuhe
     private static final Pattern MP3_URL_PATTERN = Pattern.compile("https.+?\\.mp3");
     private static final Pattern BACKSLASH = Pattern.compile("\\\\");
 
-//    public static void downloadAudionBook(String uri) throws IOException, InterruptedException
-//    {
-//        final Document document = Jsoup.connect(uri).get();
-//
-//        final String title = getTitle(document);
-//        final String author = getAuthor(document);
-//        System.out.printf("Download %s - %s\n", author, title);
-//
-//        final List<String> trackUrls = getTrackUrls(document);
-//
-//        final int size = trackUrls.size();
-//        for (int i = 0; i < size; i++)
-//        {
-//            final String newUrl = BACKSLASH.matcher(trackUrls.get(i)).replaceAll("");
-//            final HttpRequest request = HttpRequest.newBuilder(URI.create(newUrl)).build();
-//
-//            final Path path = Main.OUTPUT_DIR.resolve(author + " - " + title + " - " + (i + 1) + ".mp3");
-//            HTTP_CLIENT.send(request, BodyHandlers.ofFile(path));
-//
-//            System.out.printf("Download complete [%d/%d]\n", i + 1, size);
-//        }
-//    }
-
-    public static String getTitle(Document document)
-    {
-        final Elements bookTitleElements = document.getElementsByClass("book_title_elem book_title_name");
-        if (bookTitleElements.isEmpty())
-        {
-            return "No TITLE";
-        }
-        return bookTitleElements.get(0).ownText();
-    }
-
-    public static String getAuthor(Document document)
-    {
-        final Elements bookTitleElements = document.getElementsByClass("book_title_elem");
-        final Elements author = bookTitleElements.select("[itemprop=author]");
-        final Elements authorLink = author.get(0).select("> a");
-        if (authorLink.isEmpty())
-        {
-            return "NO AUTHOR";
-        }
-        return authorLink.text();
-    }
-
-    public static List<String> getTrackUrls(Document document)
+    private static List<String> getTrackUrls(Document document)
     {
         final String dataNodeWithMp3 = document.getElementsByTag("script")
                 .stream()
@@ -83,6 +40,13 @@ public class DownloaderAudioBookFromKnigavuhe
                 .map(matchResult -> matcher.group(0))
                 .map(uri -> BACKSLASH.matcher(uri).replaceAll(""))
                 .toList();
+    }
+
+    public static String getTrackUrlById(final String urlBook, final int id) throws IOException
+    {
+        final Document document = Jsoup.connect(urlBook).get();
+        final List<String> trackUrls = getTrackUrls(document);
+        return trackUrls.get(id);
     }
 
     public static File downloadPart(final String uri)
@@ -108,5 +72,13 @@ public class DownloaderAudioBookFromKnigavuhe
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    public static int getTotalSizeParts(final String url) throws IOException
+    {
+        final Document document = Jsoup.connect(url).get();
+        final Elements playerPlaylist = document.getElementById("player_playlist")
+                .select("div.book_playlist_item");
+        return playerPlaylist.size();
     }
 }

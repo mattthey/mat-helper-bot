@@ -42,7 +42,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>Main</mainClass>
+							<mainClass>com.github.mattthey.mathelperbot.Main</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
